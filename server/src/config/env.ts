@@ -16,8 +16,8 @@ const envSchema = z.object({
   SUPABASE_ANON_KEY: z.string().optional().default('placeholder_anon_key'),
   SUPABASE_SERVICE_ROLE_KEY: z.string().optional().default('placeholder_service_role_key'),
 
-  GEMINI_API_KEY: z.string().default('AIzaSyA3gCgEAg8vDyq0XC1krsXiK4QpBhVCYLo'),
-  APIFY_API_TOKEN: z.string().default('apify_api_HlAnUDli1soQICXXi3vmJWzVkG84vg3PO6T6'),
+  GEMINI_API_KEY: z.string().optional().default(''),
+  APIFY_API_TOKEN: z.string().optional().default(''),
 });
 
 const _env = envSchema.safeParse(process.env);
