@@ -53,7 +53,6 @@ scrap/
 
 2. Setup Environment Variables:
    - Copy `server/.env.example` to `server/.env` and update values.
-   - Copy `client/.env.example` to `client/.env` and update values.
 
 3. Run Development Servers:
    ```bash
