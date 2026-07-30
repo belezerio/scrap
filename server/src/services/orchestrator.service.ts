@@ -26,19 +26,35 @@ export interface ClassificationResult {
  * Extracts an Instagram username from the prompt.
  */
 function extractInstagramUsername(prompt: string): string[] {
+  // 1. Handle with @ symbol
   const atMatch = prompt.match(/@([a-zA-Z0-9_.]+)/g);
   if (atMatch) return atMatch.map((m) => m.replace('@', ''));
 
+  // 2. Quoted handles
   const quotedMatch = prompt.match(/["']([a-zA-Z0-9_.]+)["']/g);
   if (quotedMatch) return quotedMatch.map((m) => m.replace(/["']/g, ''));
 
+  // 3. Handle at beginning of prompt (e.g. "onedesign.in scrap this account...")
+  const startMatch = prompt.match(/^([a-zA-Z0-9_.]{2,30})\s+(?:scrap|scrape|find|get|check|tell|show|this|the)/i);
+  if (startMatch) {
+    const candidate = startMatch[1].toLowerCase();
+    const stopWords = new Set(['find', 'scrape', 'scrap', 'get', 'fetch', 'check', 'show', 'please', 'help', 'can', 'how', 'instagram', 'facebook']);
+    if (!stopWords.has(candidate)) return [candidate];
+  }
+
+  // 4. Pattern: "account <handle>", "profile <handle>", "user <handle>", "of <handle>"
   const patternMatch = prompt.match(
     /(?:account|profile|user|of|for|named?)\s+([a-zA-Z0-9_.]{2,30})/i
   );
-  if (patternMatch) return [patternMatch[1]];
+  if (patternMatch) {
+    const candidate = patternMatch[1].toLowerCase();
+    const stopWords = new Set(['and', 'this', 'that', 'the', 'all', 'a', 'an', 'stats', 'data', 'info']);
+    if (!stopWords.has(candidate)) return [candidate];
+  }
 
+  // 5. Matching handle before/after instagram/instagrap/insta/ig keywords
   const igWordMatch = prompt.match(
-    /instagram\s+(?:and\s+)?(?:find|scrap[e]?|get|fetch|check|show|search)?\s*([a-zA-Z0-9_.]{2,30})/i
+    /(?:instagram|instagrap|instagrm|insta|ig)\s+(?:account|profile|page|user|posts?|reels?|comments?|and\s+)?(?:find|scrap[e]?|get|fetch|check|show|search)?\s*([a-zA-Z0-9_.]{2,30})/i
   );
   if (igWordMatch) {
     const candidate = igWordMatch[1].toLowerCase();
@@ -47,10 +63,14 @@ function extractInstagramUsername(prompt: string): string[] {
       'information', 'details', 'the', 'all', 'from', 'me', 'and', 'for',
       'find', 'give', 'about', 'it', 'my', 'their', 'his', 'her', 'scrape',
       'scrap', 'get', 'fetch', 'search', 'show', 'check', 'that', 'this',
-      'followers', 'following', 'engagement', 'likes', 'views',
+      'followers', 'following', 'engagement', 'likes', 'views', 'stats',
     ]);
     if (!stopWords.has(candidate)) return [candidate];
   }
+
+  // 6. Fallback domain/handle with dot (e.g. onedesign.in)
+  const domainHandleMatch = prompt.match(/\b([a-zA-Z0-9_]+\.[a-zA-Z0-9_.]+)\b/i);
+  if (domainHandleMatch) return [domainHandleMatch[1]];
 
   return [];
 }
@@ -69,7 +89,7 @@ function extractUrl(prompt: string): string | null {
 function extractSearchTerm(prompt: string): string {
   let cleaned = prompt
     .replace(/(?:scrap[e]?|find|search|get|fetch|show|check|give me|tell me about|look up)\s*/gi, '')
-    .replace(/(?:instagram|facebook|google maps?|google places|linkedin|amazon)\s*/gi, '')
+    .replace(/(?:instagram|instagrap|facebook|google maps?|google places|linkedin|amazon)\s*/gi, '')
     .replace(/(?:accounts?|posts?|reels?|comments?|profiles?|pages?|from|and|for|all|the|in|on|at|with|about)\s*/gi, '')
     .replace(/\d+/g, '')
     .trim();
@@ -188,7 +208,17 @@ export class OrchestrationAgent {
     }
 
     // ── 2. Instagram ──────────────────────────────────────────────────────
-    if (lower.includes('instagram') || lower.includes('ig reel') || lower.includes('ig post') || lower.includes('insta ')) {
+    const isInstagramRequest =
+      lower.includes('instagram') ||
+      lower.includes('instagrap') ||
+      lower.includes('instagrm') ||
+      lower.includes('insta ') ||
+      lower.includes('ig reel') ||
+      lower.includes('ig post') ||
+      lower.includes('ig account') ||
+      lower.includes('ig profile');
+
+    if (isInstagramRequest) {
       const usernames = extractInstagramUsername(prompt);
       const resultsLimit = extractCount(prompt, 10);
 

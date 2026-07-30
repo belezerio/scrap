@@ -256,6 +256,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 } else if (phase === 'Streaming Response') {
                   updateProgress(95, `Streaming Response...`);
                 }
+              } else if (parsed.error) {
+                accumulatedText += `\n\n⚠️ **Pipeline Error**: ${parsed.error}`;
+                await updateMessageContent(targetConvId, aiMsgId, accumulatedText, false);
               } else if (parsed.text) {
                 accumulatedText += parsed.text;
                 await updateMessageContent(targetConvId, aiMsgId, accumulatedText, true);
